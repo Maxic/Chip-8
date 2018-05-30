@@ -32,8 +32,8 @@
 
     Register map
     +---|-------------------|-----------------------+            
-    16  | 8-bit registers   | Vx                    |
-    1   | 16-bit register   | I                     |
+    16  | 8-bit registers   | Vx - Data registers   |
+    1   | 16-bit register   | I - address register  |
     1   | 8-bit register    | delay                 |
     1   | 8-bit register    | sound                 |
     1   | 16-bit register   | program counter (pc)  |
