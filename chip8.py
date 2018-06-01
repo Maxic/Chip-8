@@ -22,6 +22,13 @@ def main():
 
     # Main cycle
 
+    while cpu.pc < 4096:
+        opcode = cpu.fetch_opcode(cpu.pc)
+        if int(opcode) > 0:
+            cpu.execute_operation(opcode)
+
+
+
 def load_rom(memory, pc, rom_path):
     print("Loading ROM from %s...", rom_path)
     with open(os.path.expanduser(rom_path), "rb") as f:
