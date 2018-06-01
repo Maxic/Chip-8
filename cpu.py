@@ -1,21 +1,12 @@
-"""
-+-----------------------+
-|   CHIP-8 Emulator     |
-|                       |
-| Barend Poot      2018 |
-+-----------------------+
-"""
-
-
 class Cpu:
     def __init__(self):
         # memory 4kb
-        self.memory = [0x00] * 4096
+        self.memory = [0] * 4096
 
         # data registers (8-bit)
         self.V = [0] * 16
 
-        # adress register (16-bit)
+        # address register (16-bit)
         self.I = 0
 
         # timers (8-bit)
@@ -30,9 +21,31 @@ class Cpu:
         self.stack = [0] * 16
 
         # initialize some sprites in memory
+        self.sprites = [
+            0xF0, 0x90, 0x90, 0x90, 0xF0,  # Zero
+            0x20, 0x60, 0x20, 0x20, 0x70,  # One
+            0xF0, 0x10, 0xF0, 0x80, 0xF0,  # Two
+            0xF0, 0x10, 0xF0, 0x10, 0xF0,  # Three
+            0x90, 0x90, 0xF0, 0x10, 0x10,  # Four
+            0xF0, 0x80, 0xF0, 0x10, 0xF0,  # Five
+            0xF0, 0x80, 0xF0, 0x90, 0xF0,  # Six
+            0xF0, 0x10, 0x20, 0x40, 0x40,  # Seven
+            0xF0, 0x90, 0xF0, 0x90, 0xF0,  # Eight
+            0xF0, 0x90, 0xF0, 0x10, 0xF0,  # Nine
+            0xF0, 0x90, 0xF0, 0x90, 0x90,  # A
+            0xE0, 0x90, 0xE0, 0x90, 0xE0,  # B
+            0xF0, 0x80, 0x80, 0x80, 0xF0,  # C
+            0xE0, 0x90, 0x90, 0x90, 0xE0,  # D
+            0xF0, 0x80, 0xF0, 0x80, 0xF0,  # E
+            0xF0, 0x80, 0xF0, 0x80, 0x80   # F
+        ]
+        for x in range(0x00, 0x50):
+            self.memory[0x96+x] = self.sprites[x]
 
-    # fetch a single byte
-    def fetch_byte(self, hexVal):
-        return NotImplementedError
-
-    print("debug")
+    # fetch an opcode from two bytes
+    def fetch_opcode(self, hexvalue):
+        byte1 = self.memory[hexvalue]
+        byte2 = self.memory[hexvalue+1]
+        opcode = byte1 << 8
+        opcode = opcode | byte2
+        return opcode
