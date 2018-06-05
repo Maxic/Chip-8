@@ -1,5 +1,6 @@
 import logging
 import random
+import numpy as N
 
 
 class Cpu:
@@ -21,10 +22,14 @@ class Cpu:
         self.pc = 0x200
 
         # stack pointer (8-bit) and stack (16-bit)
-        self.sp = 0
+        self.stack_pointer = 0
         self.stack = [0] * 16
 
+        # Initialize graphics array
+        self.graphics = N.zeros((31, 63))
+
         # initialize some sprites in memory
+        self.sprite_pointer = 0x50
         self.sprites = [
             0xF0, 0x90, 0x90, 0x90, 0xF0,  # Zero
             0x20, 0x60, 0x20, 0x20, 0x70,  # One
@@ -45,7 +50,7 @@ class Cpu:
         ]
         # Sprites are saved in memory starting at 0x50
         for i in range(len(self.sprites)):
-            self.memory[0x50+i] = self.sprites[i]
+            self.memory[self.sprite_pointer+i] = self.sprites[i]
 
         logging.basicConfig(level=logging.DEBUG)
 
@@ -65,20 +70,19 @@ class Cpu:
         x = (opcode & 0x0F00) >> 8
         y = (opcode & 0x00F0) >> 4
 
-        logging.debug("Register I: " + bin(self.I))
-
         # 0XXX -  Multiple opcodes
         if opcode_identifier == 0x0000:
-            # 00E0 - CLS - Clear the display. # TODO
+            # 00E0 - CLS - Clear the display.
             if opcode == 0x0E00:
                 logging.debug(hex(opcode) + " == 00E0 - CLS - Clear the display")
+                self.graphics = N.zeros((31, 63))
                 self.pc += 2
 
             # 00EE - RET - Return from a subroutine.
             elif opcode == 0x00EE:
                 logging.debug(hex(opcode) + " == 00EE - RET - Return from a subroutine")
-                self.pc = self.stack[self.sp]
-                self.sp -= 1
+                self.pc = self.stack[self.stack_pointer]
+                self.stack_pointer -= 1
 
         # 1nnn - JP addr - Jump to location nnn.
         elif opcode_identifier == 0x1000:
@@ -88,8 +92,8 @@ class Cpu:
         # 2nnn - CALL addr - Call subroutine at nnn.
         elif opcode_identifier == 0x2000:
             logging.debug(hex(opcode) + " == 2nnn - CALL addr - Call subroutine at nnn")
-            self.sp += 1
-            self.stack[self.sp] = self.pc
+            self.stack_pointer += 1
+            self.stack[self.stack_pointer] = self.pc
             self.pc = nnn
 
         # 3xkk - SE Vx, byte - Skip next instruction if Vx = kk.
@@ -283,24 +287,39 @@ class Cpu:
                 self.I = self.I + self.V[x]
                 self.pc += 2
 
-            # Fx29 - LD F, Vx - Set I = location of sprite for digit Vx. # TODO
+            # Fx29 - LD F, Vx - Set I = location of sprite for digit Vx.
             elif opcode & 0xF0FF == 0xF029:
                 logging.debug(hex(opcode) + " == Fx29 - LD F, Vx - Set I = location of sprite for digit Vx")
+                self.I = (self.V[x] * 5) + self.sprite_pointer
                 self.pc += 2
 
-            # Fx33 - LD B, Vx - Store BCD representation of Vx in memory locations I, I+1, and I+2. # TODO
+            # Fx33 - LD B, Vx - Store BCD representation of Vx in memory locations I, I+1, and I+2.
             elif opcode & 0xF0FF == 0xF033:
                 logging.debug(hex(opcode) + " == Fx33 - LD B, Vx - Store BCD representation of Vx in memory locations I, I+1, and I+2")
+                self.memory[self.I] = (self.V[x >> 8] / 100);
+                self.memory[self.I + 1] = ((self.V[x >> 8] / 10) % 10);
+                self.memory[self.I + 2] = ((self.V[x >> 8] % 100) % 10);
                 self.pc += 2
 
-            # Fx55 - LD [I], Vx - Store registers V0 through Vx in memory starting at location I. # TODO
+            # Fx55 - LD [I], Vx - Store registers V0 through Vx in memory starting at location I.
             elif opcode & 0xF0FF == 0xF055:
                 logging.debug(hex(opcode) + " == Fx55 - LD [I], Vx - Store registers V0 through Vx in memory starting at location I")
+                for i in range(0x10):
+                    self.memory[self.I + i] = self.V[i]
                 self.pc += 2
 
-            # Fx65 - LD Vx, [I] - Read registers V0 through Vx from memory starting at location I. # TODO
+            # Fx65 - LD Vx, [I] - Read registers V0 through Vx from memory starting at location I.
             elif opcode & 0xF0FF == 0xF065:
                 logging.debug(hex(opcode) + " == Fx65 - LD Vx, [I] - Read registers V0 through Vx from memory starting at location I")
+                for i in range(0x10):
+                    self.V[i] = self.memory[self.I + i]
                 self.pc += 2
         else:
             raise LookupError("This operation is not available, are you using a Super Chip-8 ROM?")
+
+        # Debug logging
+        logging.debug("Register I: " + bin(self.I))
+        for i in range(0x10):
+            logging.debug("Register V[" + hex(i) + "]: " + hex(self.V[i]))
+        # logging.debug('\n' + '\n'.join([''.join(['{:2}'.format(int(item)) for item in row])
+        #                                for row in self.graphics]))
