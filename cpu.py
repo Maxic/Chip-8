@@ -1,11 +1,12 @@
 import logging
 import random
 import numpy as N
+import pygame
 
 
 class Cpu:
     def __init__(self):
-        # memory 4kb
+        # memory 4kbs
         self.memory = [0] * 4096
 
         # data registers (8-bit)
@@ -52,6 +53,8 @@ class Cpu:
         for i in range(len(self.sprites)):
             self.memory[self.sprite_pointer+i] = self.sprites[i]
 
+        self.keys = list(range(16))
+
         logging.basicConfig(level=logging.DEBUG)
 
     # fetch an opcode from two bytes
@@ -69,6 +72,13 @@ class Cpu:
         kk = opcode & 0x00FF
         x = (opcode & 0x0F00) >> 8
         y = (opcode & 0x00F0) >> 4
+
+        # Debug logging
+        logging.debug("Register I: " + bin(self.I))
+        for i in range(0x10):
+            logging.debug("Register V[" + hex(i) + "]: " + hex(self.V[i]))
+        logging.debug('\n' + '\n'.join([''.join(['{:2}'.format(int(item)) for item in row])
+                                        for row in self.graphics]))
 
         # 0XXX -  Multiple opcodes
         if opcode_identifier == 0x0000:
@@ -264,10 +274,16 @@ class Cpu:
                 self.V[x] = self.delay
                 self.pc += 2
 
-            # Fx0A - LD Vx, K - Wait for a key press, store the value of the key in Vx. # TODO
+            # Fx0A - LD Vx, K - Wait for a key press, store the value of the key in Vx.
+            # Program counter does not progress if no keys are pressed, so no loop necessary
+            # TODO: Debug and handle non-keypad keys pressed
             elif opcode & 0xF0FF == 0xF00A:
                 logging.debug(hex(opcode) + " == Fx0A - LD Vx, K - Wait for a key press, store the value of the key in Vx")
-                self.pc += 2
+                event = pygame.event.wait()
+                if event.type == pygame.KEYDOWN:
+                    key = pygame.key.get_pressed()
+                    self.V[self.key_lookup['key']]
+                    self.pc += 2
 
             # Fx15 - LD DT, Vx - Set delay timer = Vx.
             elif opcode & 0xF0FF == 0xF015:
@@ -316,10 +332,3 @@ class Cpu:
                 self.pc += 2
         else:
             raise LookupError("This operation is not available, are you using a Super Chip-8 ROM?")
-
-        # Debug logging
-        logging.debug("Register I: " + bin(self.I))
-        for i in range(0x10):
-            logging.debug("Register V[" + hex(i) + "]: " + hex(self.V[i]))
-        # logging.debug('\n' + '\n'.join([''.join(['{:2}'.format(int(item)) for item in row])
-        #                                for row in self.graphics]))
