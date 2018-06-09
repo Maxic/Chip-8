@@ -1,8 +1,6 @@
 import logging
 import random
 import numpy as N
-import pygame
-
 
 class Cpu:
     def __init__(self):
@@ -66,7 +64,7 @@ class Cpu:
         self.pc += 2
         return opcode
 
-    def execute_operation(self, opcode):
+    def execute_operation(self, opcode, key):
         opcode_identifier = opcode & 0xF000
         nnn = opcode & 0xFFF
         kk = opcode & 0x00FF
@@ -93,6 +91,8 @@ class Cpu:
                 logging.debug(hex(opcode) + " == 00EE - RET - Return from a subroutine")
                 self.pc = self.stack[self.stack_pointer]
                 self.stack_pointer -= 1
+            else:
+                raise LookupError("This operation is not available, are you using a Super Chip-8 ROM?")
 
         # 1nnn - JP addr - Jump to location nnn.
         elif opcode_identifier == 0x1000:
@@ -219,6 +219,8 @@ class Cpu:
                     self.V[0xF] = 0
                 self.V[x] = self.V[x] * 2
                 self.pc += 2
+            else:
+                raise LookupError("This operation is not available, are you using a Super Chip-8 ROM?")
 
         # 9xy0 - SNE Vx, Vy - Skip next instruction if Vx != Vy.
         elif (opcode_identifier == 0x9000) and (opcode & 0xF == 0x0):
@@ -251,19 +253,36 @@ class Cpu:
         # Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
         elif opcode_identifier == 0xD000:
             logging.debug(hex(opcode) + " == Dxyn - DRW Vx, Vy, nibble - Display sprite and set collision")
+            height = opcode & 0x000F
+            width = 8
+            x_initial = self.V[x]
+            y_initial = self.V[y]
+            for x_pos in range(height):
+                binary_string = bin(self.memory[self.I+x_pos])
+                binary_string = binary_string[2:].zfill(width)
+                for y_pos in range(width):
+                    self.graphics[x_initial+x_pos][y_initial+y_pos] = binary_string[y_pos]
             self.pc += 2
 
         #EXXX - Multiple opcodes
         elif opcode_identifier == 0xE000:
-            # Ex9E - SKP Vx - Skip next instruction if key with the value of Vx is pressed. # TODO
+            # Ex9E - SKP Vx - Skip next instruction if key with the value of Vx is pressed.
             if (opcode & 0xF0FF) == 0xE091:
                 logging.debug(hex(opcode) + " == Ex9E - SKP Vx - Skip next instruction if key with the value of Vx is pressed")
-                self.pc += 2
+                if key == self.V[x]:
+                    self.pc += 4
+                else:
+                    self.pc += 2
 
-            # ExA1 - SKNP Vx - Skip next instruction if key with the value of Vx is not pressed. # TODO
+            # ExA1 - SKNP Vx - Skip next instruction if key with the value of Vx is not pressed.
             elif opcode & 0xF0FF == 0xE0A1:
                 logging.debug(hex(opcode) + " == ExA1 - SKNP Vx - Skip next instruction if key with the value of Vx is not pressed")
-                self.pc += 2
+                if key != self.V[x]:
+                    self.pc += 4
+                else:
+                    self.pc += 2
+            else:
+                raise LookupError("This operation is not available, are you using a Super Chip-8 ROM?")
 
         # FXXX - Multiple opcodes
         elif opcode_identifier == 0xF000:
@@ -276,13 +295,10 @@ class Cpu:
 
             # Fx0A - LD Vx, K - Wait for a key press, store the value of the key in Vx.
             # Program counter does not progress if no keys are pressed, so no loop necessary
-            # TODO: Debug and handle non-keypad keys pressed
             elif opcode & 0xF0FF == 0xF00A:
                 logging.debug(hex(opcode) + " == Fx0A - LD Vx, K - Wait for a key press, store the value of the key in Vx")
-                event = pygame.event.wait()
-                if event.type == pygame.KEYDOWN:
-                    key = pygame.key.get_pressed()
-                    self.V[self.key_lookup['key']]
+                if key:
+                    self.V[x] = key
                     self.pc += 2
 
             # Fx15 - LD DT, Vx - Set delay timer = Vx.
@@ -330,5 +346,7 @@ class Cpu:
                 for i in range(0x10):
                     self.V[i] = self.memory[self.I + i]
                 self.pc += 2
+            else:
+                raise LookupError("This operation is not available, are you using a Super Chip-8 ROM?")
         else:
             raise LookupError("This operation is not available, are you using a Super Chip-8 ROM?")

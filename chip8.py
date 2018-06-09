@@ -19,7 +19,7 @@ def main():
     key = None
 
     # Specify Rom (TODO: Build CLI)
-    rom_path = "~Barend/Github/Chip-8/Roms/INVADERS"
+    rom_path = "~Barend/Github/Chip-8/Roms/UFO"
 
     # Load ROM
     load_rom(cpu.memory, cpu.pc, rom_path)
@@ -34,9 +34,8 @@ def main():
         # fetch opcode from memory
         opcode = cpu.fetch_opcode(cpu.pc)
 
-        # Execute opcode if any
-        if int(opcode) > 0:
-            cpu.execute_operation(opcode, key)
+        # Execute opcode
+        cpu.execute_operation(opcode, key)
 
 
 def load_rom(memory, pc, rom_path):
