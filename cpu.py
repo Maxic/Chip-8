@@ -2,6 +2,7 @@ import logging
 import random
 import numpy as N
 
+
 class Cpu:
     def __init__(self):
         # memory 4kbs
@@ -61,7 +62,6 @@ class Cpu:
         byte2 = self.memory[hexvalue+1]
         opcode = byte1 << 8
         opcode = opcode | byte2
-        self.pc += 2
         return opcode
 
     def execute_operation(self, opcode, key):
@@ -72,7 +72,8 @@ class Cpu:
         y = (opcode & 0x00F0) >> 4
 
         # Debug logging
-        logging.debug("Register I: " + bin(self.I))
+        logging.debug("Register I: " + hex(self.I))
+        logging.debug("Program Counter: " + hex(self.pc))
         for i in range(0x10):
             logging.debug("Register V[" + hex(i) + "]: " + hex(self.V[i]))
         logging.debug('\n' + '\n'.join([''.join(['{:2}'.format(int(item)) for item in row])
@@ -81,7 +82,7 @@ class Cpu:
         # 0XXX -  Multiple opcodes
         if opcode_identifier == 0x0000:
             # 00E0 - CLS - Clear the display.
-            if opcode == 0x0E00:
+            if opcode == 0x00E0:
                 logging.debug(hex(opcode) + " == 00E0 - CLS - Clear the display")
                 self.graphics = N.zeros((31, 63))
                 self.pc += 2
@@ -89,10 +90,10 @@ class Cpu:
             # 00EE - RET - Return from a subroutine.
             elif opcode == 0x00EE:
                 logging.debug(hex(opcode) + " == 00EE - RET - Return from a subroutine")
-                self.pc = self.stack[self.stack_pointer]
+                self.pc = self.stack[self.stack_pointer] + 2
                 self.stack_pointer -= 1
             else:
-                raise LookupError("This operation is not available, are you using a Super Chip-8 ROM?")
+                raise LookupError(hex(opcode) + ": This operation is not available, are you using a Super Chip-8 ROM?")
 
         # 1nnn - JP addr - Jump to location nnn.
         elif opcode_identifier == 0x1000:
@@ -220,7 +221,7 @@ class Cpu:
                 self.V[x] = self.V[x] * 2
                 self.pc += 2
             else:
-                raise LookupError("This operation is not available, are you using a Super Chip-8 ROM?")
+                raise LookupError(hex(opcode) + ": This operation is not available, are you using a Super Chip-8 ROM?")
 
         # 9xy0 - SNE Vx, Vy - Skip next instruction if Vx != Vy.
         elif (opcode_identifier == 0x9000) and (opcode & 0xF == 0x0):
@@ -255,13 +256,13 @@ class Cpu:
             logging.debug(hex(opcode) + " == Dxyn - DRW Vx, Vy, nibble - Display sprite and set collision")
             height = opcode & 0x000F
             width = 8
-            x_initial = self.V[x]
-            y_initial = self.V[y]
+            x_initial = self.V[y]
+            y_initial = self.V[x]
             for x_pos in range(height):
                 binary_string = bin(self.memory[self.I+x_pos])
                 binary_string = binary_string[2:].zfill(width)
                 for y_pos in range(width):
-                    self.graphics[x_initial+x_pos][y_initial+y_pos] = binary_string[y_pos]
+                    self.graphics[(x_initial+x_pos) % 31][(y_initial+y_pos) % 63] = binary_string[y_pos]
             self.pc += 2
 
         #EXXX - Multiple opcodes
@@ -282,7 +283,7 @@ class Cpu:
                 else:
                     self.pc += 2
             else:
-                raise LookupError("This operation is not available, are you using a Super Chip-8 ROM?")
+                raise LookupError(hex(opcode) + ": This operation is not available, are you using a Super Chip-8 ROM?")
 
         # FXXX - Multiple opcodes
         elif opcode_identifier == 0xF000:
@@ -347,6 +348,6 @@ class Cpu:
                     self.V[i] = self.memory[self.I + i]
                 self.pc += 2
             else:
-                raise LookupError("This operation is not available, are you using a Super Chip-8 ROM?")
+                raise LookupError(hex(opcode) + ": This operation is not available, are you using a Super Chip-8 ROM?")
         else:
-            raise LookupError("This operation is not available, are you using a Super Chip-8 ROM?")
+            raise LookupError(hex(opcode) + ": This operation is not available, are you using a Super Chip-8 ROM?")

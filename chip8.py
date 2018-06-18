@@ -19,7 +19,7 @@ def main():
     key = None
 
     # Specify Rom (TODO: Build CLI)
-    rom_path = "~Barend/Github/Chip-8/Roms/UFO"
+    rom_path = "~Barend/Github/Chip-8/Roms/EMULOGO.ch8"
 
     # Load ROM
     load_rom(cpu.memory, cpu.pc, rom_path)
@@ -33,6 +33,8 @@ def main():
 
         # fetch opcode from memory
         opcode = cpu.fetch_opcode(cpu.pc)
+        hex_opcode = hex(opcode)
+        program_counter = cpu.pc
 
         # Execute opcode
         cpu.execute_operation(opcode, key)
