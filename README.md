@@ -53,6 +53,11 @@
               +--+      y - A 4-bit value, the upper 4 bits of the low byte of the instruction 
 
 
+# TODO:
+- Graphical implementation
+- Unit tests for operation codes
+- More Testing on different ROMS
+
 Sources:
 - http://www.multigesture.net/articles/how-to-write-an-emulator-chip-8-interpreter/
 - http://devernay.free.fr/hacks/chip8/C8TECH10.HTM

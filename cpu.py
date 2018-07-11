@@ -172,7 +172,7 @@ class Cpu:
 
             # 8xy4 - ADD Vx, Vy - Set Vx = Vx + Vy, set VF = carry.
             elif opcode & 0xF == 0x4:
-                logging.debug(hex(opcode) + " == xy4 - ADD Vx, Vy - Set Vx = Vx + Vy, set VF = carry")
+                logging.debug(hex(opcode) + " == 8xy4 - ADD Vx, Vy - Set Vx = Vx + Vy, set VF = carry")
                 if self.V[x] + self.V[y] > 0xFF:
                     self.V[0xF] = 1
                     self.V[x] = (self.V[x] + self.V[y]) - 256
@@ -250,7 +250,7 @@ class Cpu:
             self.V[x] = random_byte & kk
             self.pc += 2
 
-        # Dxyn - DRW Vx, Vy, nibble # TODO
+        # Dxyn - DRW Vx, Vy, nibble
         # Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
         elif opcode_identifier == 0xD000:
             logging.debug(hex(opcode) + " == Dxyn - DRW Vx, Vy, nibble - Display sprite and set collision")
